@@ -11,6 +11,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -18,7 +19,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/defaults"
 	"github.com/aws/aws-sdk-go/aws/request"
-	"github.com/aws/aws-sdk-go/aws/signer/v4"
+	v4 "github.com/aws/aws-sdk-go/aws/signer/v4"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -42,6 +43,14 @@ func NewSigningProxy(target *url.URL, creds *credentials.Credentials, region str
 		req.URL.Scheme = target.Scheme
 		req.URL.Host = target.Host
 		req.Host = target.Host
+
+		if appConfig.Service == "s3" {
+			req.URL.Path = target.RequestURI() + req.URL.Path
+
+			if strings.HasSuffix(req.URL.Path, "/") {
+				req.URL.Path = req.URL.Path + "index.html"
+			}
+		}
 
 		// To perform the signing, we leverage aws-sdk-go
 		// aws.request performs more functions than we need here
